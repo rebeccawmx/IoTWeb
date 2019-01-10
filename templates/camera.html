@@ -1,0 +1,31 @@
+<!--
+   index.html
+   
+-->
+
+<html>
+  <head>
+    <title>拍摄间</title>
+    <link rel="stylesheet" href='../static/style.css'/>
+    <style>
+		body {
+			text-align: center;
+		}
+    </style>
+
+  </head>
+  <body>
+  
+    <h1>请对准镜头微笑！</h1>
+	<hr>
+    <h3><img src="{{ url_for('video_feed') }}" width="60%"></h3>
+    <h3>{{ time }}</h3>
+	<hr>
+	<a href="/photo" class="button">拍照</a>
+	<a href="/view" class="button">查看</a>
+    <hr>
+	<h3><a href="/index" class="button">返回主页</a></h3>	
+	<hr>
+	
+  </body>
+</html>

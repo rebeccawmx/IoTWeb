@@ -1,0 +1,23 @@
+<html>
+  <head>
+    <title>拍相册</title>
+    <link rel="stylesheet" href='../static/style.css'/>
+    <style>
+		body {
+			text-align: center;
+		}
+    </style>
+
+	
+  </head>
+  <body>
+  
+    <h1>预览</h1>
+	<hr>
+    <h3><img src="{{ url_for('static', filename='image/test.jpg') }}" width="60%"></h3>
+    <h3>{{ time }}</h3>
+	<a href="/save" class="button">保存</a>
+	<a href='/delete' class="button">删除</a>
+	
+  </body>
+</html>
