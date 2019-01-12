@@ -1,0 +1,20 @@
+<!doctype html>
+<html>
+  <head>
+     <title>树莓派车载门控</title>
+     <link rel="stylesheet" href='../static/style.css'/>
+  </head>
+  <body>
+  <h2>LedDemo</h2>
+  <form action="{{ url_for('dooralarm') }}" method=post>
+    <dl>
+      <dt>请点击开关-亮:
+      <dd><input type=submit name=ON>
+      <dt>请点击开关-灭:
+      <dd><input type=submit name=OFF>
+      <dd><input type=submit value=返回>
+      <dd><p>{{ ligth }}</p></dd>
+    </dl>
+  </form>
+  </body>
+</html>

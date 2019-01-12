@@ -1,14 +1,13 @@
 {% extends "layout.html" %}
 {% block body %}
-  <h2>Login</h2>
-  {% if error %}<p class=error><strong>Error:</strong> {{ error }}{% endif %}
+  <h2><img src='../static/image/icon-test.png' width="20">登录</h2>
+  {% if error %}<p class=error><strong>错误:</strong> {{ error }}{% endif %}
   <form action="{{ url_for('login') }}" method=post>
     <dl>
-      <dt>Username:
-      <dd><input type=text name=username>
-      <dt>Password:
-      <dd><input type=password name=password>
-      <dd><input type=submit value=Login>
+		<div><dt>帐号:&nbsp;<input type=text name=username></dt></div>
+      	<div><dt>密码:&nbsp;<input type=password name=password></dt></div>
+		
+      	<div><input float=center type=submit value=登录></div>
     </dl>
   </form>
 {% endblock %}

@@ -14,13 +14,22 @@ from SimpleCV import *
 from camera_pi import Camera
 
 import sqlite3
+import serial
+port = "/dev/ttyACM0"
+
+if sys.getdefaultencoding() != 'utf-8':
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
 
 
 DATABASE = '/tmp/flaskr2.db'
 SECRET_KEY = 'development key'
 USERNAME = 'admin'
 PASSWORD = '123456'
- 
+
+arduino = serial.Serial(port, 9600)
+arduino.flushInput()
+
 app = Flask(__name__)
 app.config.from_object(__name__)
 app.config.from_envvar('FLASKR_SETTINGS', silent=True)	  
@@ -30,12 +39,12 @@ def login():
     error = None
     if request.method == 'POST':
         if request.form['username'] != app.config['USERNAME']:
-            error = 'Invalid username'
+            error = '帐号不存在！'
         elif request.form['password'] != app.config['PASSWORD']:
-            error = 'Invalid password'
+            error = '密码不匹配！'
         else:
             session['logged_in'] = True
-            flash('You were logged in')
+            flash('登录成功！')
             return redirect(url_for('index'))
     return render_template('login.html', error=error)
 
@@ -75,13 +84,7 @@ def video_feed():
 @app.route('/photo')			
 def photo():
 	
-	subprocess.call("raspistill -o %s -t 100" % ("/home/pi/flask/IotWeb/static/image/test.jpg"), shell=True)
-	# subprocess.call("uvccapture -m -o%s" % ("test.jpg"), shell=True)
-	
-    
-	# Camera().capture("test.jpg")
-	#subprocess.call("mv %s %s" % ("/home/pi/flask/IotWeb/test.jpg", "/home/pi/flask/camWebserver2/static/image/test.jpg"), shell=True)
-	#subprocess.call("rm -rf %s" % ("/home/pi/flask/IotWeb/test.jpg"), shell=True)
+	subprocess.call("raspistill -o %s -t 100" % ("/home/pi/flask/IoTWeb/static/image/test.jpg"), shell=True)
 
 	timeNow = time.asctime( time.localtime(time.time()) )
 	
@@ -99,20 +102,8 @@ def view():
 
 @app.route('/save')
 def save():
-	pname = "/home/pi/flask/IotWeb/photos/" + time.strftime("%Y%m%d%H%M%S",time.localtime()) + ".jpg"
-	subprocess.call("mv %s %s" % ("/home/pi/flask/IotWeb/static/image/test.jpg", pname), shell=True)
-	# subprocess.call("rm -rf %s" % ("/home/pi/flask/IotWeb/static/image/test.jpg"), shell=True)
-	
-	disp = Display() 
-	
-	while disp.isNotDone(): 
-		segment = HaarCascade("face.xml")
-		autoface = pname.findHaarFeatures(segment) 
-		if ( autoface is not None ):
-			face = autoface[-1].crop() 
-			face.save(disp)
-			face.save("/home/pi/flask/IotWeb/photos/myface.jpg") 
-
+	pname = "/home/pi/flask/IoTWeb/photos/" + time.strftime("%Y%m%d%H%M%S",time.localtime()) + ".jpg"
+	subprocess.call("mv %s %s" % ("/home/pi/flask/IoTWeb/static/image/test.jpg", pname), shell=True)
 	
 	timeNow = time.asctime( time.localtime(time.time()) )
 	templateData = {
@@ -122,7 +113,7 @@ def save():
 	
 @app.route('/delete')
 def delete():
-	subprocess.call("rm -rf %s" % ("/home/pi/flask/IotWeb/static/image/test.jpg"), shell=True)
+	subprocess.call("rm -rf %s" % ("/home/pi/flask/IoTWeb/static/image/test.jpg"), shell=True)
 					
 	timeNow = time.asctime( time.localtime(time.time()) )
 	templateData = {
@@ -131,21 +122,24 @@ def delete():
 	return render_template('index.html', **templateData)
 
 
-@app.route('/led_flush', methods=['POST'])
-def led_flush():
+@app.route('/dooralarm', methods=['POST'])
+def dooralarm():
     btn_name = get_btn_name(request)
     if btn_name == 'ON':
         arduino.flushOutput()
         arduino.write('5')
-        print("The led is opened\n")
+        arduino.read()
+        print("The door is opened\n")
     elif btn_name == 'OFF':
         arduino.flushOutput()
         arduino.write('6')
-        print("THe led is shutdowned\n")
+        arduino.read()
+        print("The door is shutdowned\n")
 
-    templateData = {}
-    return render_template('led_flush.html', **templateData);
-	
+    ligthdata = {
+            'ligth': arduino.read()
+            }
+    return render_template('dooralarm.html', **ligthdata);
 
 def get_btn_name(request):
     btn_name=""
@@ -192,7 +186,7 @@ def init_db():
 @app.route('/logout')
 def logout():
     session.pop('logged_in', None)
-    flash('You were logged out')
+    flash('帐号已退出！')
     return render_template('login.html', error=error)
 
 

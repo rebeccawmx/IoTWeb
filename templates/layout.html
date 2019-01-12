@@ -1,13 +1,18 @@
+<html>
+	<head>
+		<title>树莓派车载监控</title>
+		<link rel="stylesheet" href='../static/style.css'/>
+	</head>
 <!doctype html>
-<title>Flaskr</title>
+<title>树莓派车载监控</title>
 <link rel=stylesheet type=text/css href="{{ url_for('static', filename='style_login.css') }}">
 <div class=page>
-  <h1>Flaskr</h1>
+  <h1>树莓派车载监控</h1>
   <div class=metanav>
   {% if not session.logged_in %}
-    <a href="{{ url_for('login') }}">log in</a>
+    <a href="{{ url_for('login') }}">登录</a>
   {% else %}
-    <a href="{{ url_for('logout') }}">log out</a>
+    <a href="{{ url_for('logout') }}">退出</a>
   {% endif %}
   </div>
   {% for message in get_flashed_messages() %}

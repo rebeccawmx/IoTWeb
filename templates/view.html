@@ -1,23 +1,50 @@
 <html>
   <head>
-    <title>拍相册</title>
+    <title>照片</title>
     <link rel="stylesheet" href='../static/style.css'/>
-    <style>
-		body {
-			text-align: center;
+	  <script language="javascript">
+	function getCurDate()
+	{
+		var d = new Date();
+		var week;
+		switch (d.getDay()){
+			case 1: week="星期一"; break;
+			case 2: week="星期二"; break;
+			case 3: week="星期三"; break;
+			case 4: week="星期四"; break;
+			case 5: week="星期五"; break;
+			case 6: week="星期六"; break;
+			default: week="星期天";
 		}
-    </style>
-
-	
+		var years = d.getFullYear();
+		var month = add_zero(d.getMonth()+1);
+		var days = add_zero(d.getDate());
+		var hours = add_zero(d.getHours());
+		var minutes = add_zero(d.getMinutes());
+		var seconds=add_zero(d.getSeconds());
+		var ndate = years+"年"+month+"月"+days+"日 "+hours+":"+minutes+":"+seconds+" "+week;
+		var divT=document.getElementById("logInfo");
+		divT.innerHTML= ndate;
+	}
+	function add_zero(temp)
+	{
+		if(temp<10) return "0"+temp;
+		else return temp;
+	}
+	setInterval("getCurDate()",100);
+</script>
   </head>
   <body>
   
-    <h1>预览</h1>
+    <h1>照片预览</h1>
 	<hr>
-    <h3><img src="{{ url_for('static', filename='image/test.jpg') }}" width="60%"></h3>
-    <h3>{{ time }}</h3>
-	<a href="/save" class="button">保存</a>
-	<a href='/delete' class="button">删除</a>
-	
+    <h3><img src="{{ url_for('static', filename='image/test.jpg') }}" width="70%"></h3>
+	<hr>
+	<div>
+	<a href="/save" class="choose">&nbsp;&nbsp;保存&nbsp;&nbsp;</a> 
+	<a href="/delete" class="choose">&nbsp;&nbsp;删除&nbsp;&nbsp;</a>
+	</div>
+	<hr>
+	  	<p id="logInfo"></p>
   </body>
 </html>
