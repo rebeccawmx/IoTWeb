@@ -21,7 +21,6 @@ if sys.getdefaultencoding() != 'utf-8':
     reload(sys)
     sys.setdefaultencoding('utf-8')
 
-
 DATABASE = '/tmp/flaskr2.db'
 SECRET_KEY = 'development key'
 USERNAME = 'admin'
@@ -84,8 +83,12 @@ def video_feed():
 @app.route('/photo')			
 def photo():
 	
+<<<<<<< HEAD
 	subprocess.call("raspistill -o %s -t 100" % ("/home/pi/flask/IoTWeb/static/image/test.jpg"), shell=True)
 
+=======
+	subprocess.call("raspistill -o %s -t 100" % ("/home/pi/flask/IotWeb/static/image/test.jpg"), shell=True)
+>>>>>>> 1c848a2a737bbe7636f3b9ea74eef48c3b94e1b1
 	timeNow = time.asctime( time.localtime(time.time()) )
 	
 	templateData = {
@@ -102,8 +105,24 @@ def view():
 
 @app.route('/save')
 def save():
+<<<<<<< HEAD
 	pname = "/home/pi/flask/IoTWeb/photos/" + time.strftime("%Y%m%d%H%M%S",time.localtime()) + ".jpg"
 	subprocess.call("mv %s %s" % ("/home/pi/flask/IoTWeb/static/image/test.jpg", pname), shell=True)
+=======
+	pname = "/home/pi/flask/IotWeb/photos/" + time.strftime("%Y%m%d%H%M%S",time.localtime()) + ".jpg"
+	subprocess.call("mv %s %s" % ("/home/pi/flask/IotWeb/static/image/test.jpg", pname), shell=True)
+	
+	disp = Display() 
+	
+	while disp.isNotDone(): 
+		segment = HaarCascade("face.xml")
+		autoface = pname.findHaarFeatures(segment) 
+		if ( autoface is not None ):
+			face = autoface[-1].crop() 
+			face.save(disp)
+			face.save("/home/pi/flask/IotWeb/photos/myface.jpg") 
+
+>>>>>>> 1c848a2a737bbe7636f3b9ea74eef48c3b94e1b1
 	
 	timeNow = time.asctime( time.localtime(time.time()) )
 	templateData = {
