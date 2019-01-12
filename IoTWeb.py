@@ -15,7 +15,6 @@ from camera_pi import Camera
 
 import sqlite3
 
-
 DATABASE = '/tmp/flaskr2.db'
 SECRET_KEY = 'development key'
 USERNAME = 'admin'
@@ -76,13 +75,6 @@ def video_feed():
 def photo():
 	
 	subprocess.call("raspistill -o %s -t 100" % ("/home/pi/flask/IotWeb/static/image/test.jpg"), shell=True)
-	# subprocess.call("uvccapture -m -o%s" % ("test.jpg"), shell=True)
-	
-    
-	# Camera().capture("test.jpg")
-	#subprocess.call("mv %s %s" % ("/home/pi/flask/IotWeb/test.jpg", "/home/pi/flask/camWebserver2/static/image/test.jpg"), shell=True)
-	#subprocess.call("rm -rf %s" % ("/home/pi/flask/IotWeb/test.jpg"), shell=True)
-
 	timeNow = time.asctime( time.localtime(time.time()) )
 	
 	templateData = {
@@ -101,7 +93,6 @@ def view():
 def save():
 	pname = "/home/pi/flask/IotWeb/photos/" + time.strftime("%Y%m%d%H%M%S",time.localtime()) + ".jpg"
 	subprocess.call("mv %s %s" % ("/home/pi/flask/IotWeb/static/image/test.jpg", pname), shell=True)
-	# subprocess.call("rm -rf %s" % ("/home/pi/flask/IotWeb/static/image/test.jpg"), shell=True)
 	
 	disp = Display() 
 	
