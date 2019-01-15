@@ -2,8 +2,6 @@
 
 [TOC]
 
-
-
 大四终于接触到直接跟物联网有关的实验啦！所以给这个项目起了 叫 ***IoTWeb***，即基于车联网的远程控制 web 项目。本课程设计用 Arduino 以及相关配件模拟车门开关，用树莓派相机作为远程监控，并且开发了远程操控树莓派拍摄照片，并将照片保存在本地。相应的技术有：python3、Flask Web 服务器、HTML5、Jinja、css美化、FRP 内网穿透、SimpleCV，并利搬瓦工服务器和阿里域名实现了外网访问树莓派。
 
 ## 实验准备
@@ -75,9 +73,158 @@ for(int x=0;x<length;x++)
 
 #### 基本原理
 
+##### 流的定义
 
+流是一种让服务器在响应请求时将响应数据分块的技术。流的有点在于以下两点：
 
+- **超级巨大的响应数据**。对于超大的响应数据来说，先把响应数据装载到内存中，再返回给客户端是非常低效的。另一种方法是将响应数据写入到磁盘中，然后用 `flask.send_file()` 将文件返回给客户端，但这样将会增加 I/O 操作。如果响应数据较小，这就是个好得多的方法，因为数据能够按块进行存储。
+- **实时数据**。对于某些应用来说，也许需要向某个请求返回来自实时数据源的数据。一个很贴切的例子是实时视频或音频传送。很多安全摄像头用该技术将视频以流的形式发送到服务器。
 
+##### 用 Flask 实现视频流
+
+Flask 是一个微框架（Micro framework），官网上对“微”做了详细解释
+
+> “微”(micro) 并不意味着你要把整个web应用放到一个python文件里（虽然确实可以），也不意味着Flask 在功能上有所欠缺。微框架中的“微”意味着 Flask 旨在保持核心功能的简单而易于扩展。Flask 不会替你做出太多决策，比如使用何种数据库。而那些 Flask 帮你做好的决策（比如使用哪种模板引擎），都是很容易替换。除此之外的一切都由可由你掌握。
+>
+> 默认情况下，Flask 不包含数据库抽象层、表单验证，或是任何已在其它已库中处理的很好的功能。相反，Flask 支持通过扩展来给应用添加这些功能，如同是 Flask 本身实现的一样。众多的扩展提供了数据库集成、表单验证、上传处理及各种各样的开放认证技术等功能。Flask 也许是“微小”的，但它已准备好在复杂的生产环境中投入使用。
+
+我们可以使用 Flask 框架作为 Web 服务器，通过使用生成器响应流。
+
+##### 构建实时视频流服务器
+
+有很多种流式传输视频到浏览器的方式，每一种方法各有优劣。与 Flask 的流式特性结合得非常好的一种方法是流式输出一系列单独的 JPEG 图片。这被称为 [移动的 JPEG（Motion JPEG）](https://link.juejin.im?target=http%3A%2F%2Fen.wikipedia.org%2Fwiki%2FMotion_JPEG)，这种方法正被一些 IP 安全摄像头使用。这种方法的延迟低，但是质量并不是最好，因为对于移动视频来说，JPEG 的压缩并不高效。
+
+下面你将看到一个特别简单但又十分完善的 web 应用，可以提供移动的 JPEG 流：
+
+```python
+#!/usr/bin/env python
+from flask import Flask, render_template, Response
+from camera import Camera
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+def gen(camera):
+    while True:
+        frame = camera.get_frame()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(gen(Camera()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', debug=True)
+复制代码
+```
+
+这个应用导入了 `Camera` 类，该类负责提供帧序列。当前情形将摄像头控制部分放在单独的模块中是很好的主意，这样 web 应用就能保持代码的整洁、简单和通用性。
+
+该应用有两个路由。路由 `/` 提供定义在 `index.html` 模版中的主页面。你能从下面的代码中看到模版文件的内容：
+
+```html
+<html>
+……
+  <body>
+    <h1>实时监控</h1>
+	<hr>
+    <h3><img src="{{ url_for('video_feed') }}" width="70%"></h3>
+    <hr>
+	<h3><a href="/index" class="button">返回菜单</a></h3>	
+	<p id="logInfo"></p>	
+  </body>
+</html>
+```
+
+html 具体参考 /camera.html 。在html中最重要的一行代码就是`<img src="{{ url_for('video_feed') }}" width="70%">`。路由 `/video_feed` 返回的是流式响应。因为流返回的是可以显示在网页中的图片，到该路由的 URL 就放在图片标签的 `src` 属性中。浏览器会自动显示流中的 JPEG 图片，从而保持更新图片元素，由于分部响应受大多数（甚至所有）浏览器的支持（如果你找到一款浏览器没有这种功能，请务必告诉我）。
+
+在 `/video_feed` 路由中用到的生成器函数叫做 `gen()`，它接收 `Camera` 类的实例作为参数。`mimetype` 参数的设置和上面一样，是 `multipart/x-mixed-replace` 类型，边界字符串设置为 `frame`。
+
+`gen()` 函数进入循环，从而持续地将摄像头中获取的帧数据作为响应块返回。该函数通过调用 `camera.get_frame()` 方法从摄像头中获取一帧数据，然后它将这一帧以内容类型为 `image/jpeg` 的响应块形式产出（yield），如上所述。
+
+最终实现的效果：
+
+![1547567234883](C:\Users\59813\AppData\Roaming\Typora\typora-user-images\1547567234883.png)
+
+到现在我们的直播间就创建成功啦！
+
+### 用户登录
+
+远程操控直播间是一个很隐私的操作，加上认证模块，会让我们的摄像头更安全。
+
+首先创建一个用户和用户名：
+
+```python
+SECRET_KEY = 'development key'
+USERNAME = 'admin'
+PASSWORD = '123456'
+```
+
+设置路由响应：
+
+```python
+@app.route('/', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        if request.form['username'] != app.config['USERNAME']:
+            error = '帐号不存在！'
+        elif request.form['password'] != app.config['PASSWORD']:
+            error = '密码不匹配！'
+        else:
+            session['logged_in'] = True
+            flash('登录成功！')
+            return redirect(url_for('index'))
+    return render_template('login.html', error=error)
+```
+
+登录成功即可跳转到 /index.html 界面
+
+### 远程拍照
+
+我们采用了树莓派自带的相机模块拍摄静态照片工具`raspistill`，基本语法是：
+
+```bash
+raspistill -o cam.jpg  # 拍摄一个名叫cam.jpg的照片，保存到当前目录下
+```
+
+想要在 python里运行 debian 的命令，就需要用到`subprocess.call()`这个函数，主要代码如下：
+
+```python
+import subprocess
+
+@app.route('/photo')			
+def photo():
+	
+	subprocess.call("raspistill -o %s -t 100" % ("/home/pi/flask/IoTWeb/static/image/test.jpg"), shell=True)
+
+	return render_template('view.html', **templateData)
+```
+
+照片拍下来存到 image 目录下，如果要保存照片，则将照片存在 photos 里。具体流程参考下图：
+
+```flow
+st=>start: 进入拍照界面
+photo=>operation: 拍照
+takephoto?=>condition: 是否保存照片？
+save=>operation: 保存到/IoTWeb/photos，并以时间命名照片
+buffer=>operation: 缓存到/IoTWeb/static/image，命名为test.jpg
+e=>end: 结束
+
+st->photo->takephoto?
+takephoto?(yes)->save->e
+takephoto?(no)->buffer->e
+
+```
+
+具体实现效果如下：
+
+![1547568699587](C:\Users\59813\AppData\Roaming\Typora\typora-user-images\1547568699587.png)
 
 ## 遇到的问题
 
